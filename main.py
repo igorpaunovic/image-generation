@@ -9,3 +9,4 @@ if __name__ == '__main__':
         strides=(1, 2, 2, 1)
     )
     vae.encoder.summary()
+    vae.decoder.summary()
