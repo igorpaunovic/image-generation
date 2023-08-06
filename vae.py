@@ -1,7 +1,10 @@
 import numpy as np
 from keras import Model, metrics
-from keras.layers import Input, Conv2D, ReLU, BatchNormalization, Flatten, Dense
+from keras.layers import Input, Conv2D, BatchNormalization, Flatten, Dense, Lambda
 import keras.backend as K
+import tensorflow as tf
+
+tf.compat.v1.disable_eager_execution()
 
 
 class VariationalAutoencoder:
@@ -20,6 +23,9 @@ class VariationalAutoencoder:
         self.num_layers = len(kernels)
         self.conv_shape = None
 
+        self.mean = None
+        self.log_variance = None
+
         self.build()
 
     def build(self):
@@ -30,7 +36,7 @@ class VariationalAutoencoder:
     def build_encoder(self):
         encoder_input = self.add_encoder_input()
         layers = self.add_layers(encoder_input)
-        latent_space = self.add_latent_space(layers)
+        latent_space = self.add_bottleneck(layers)
         self.encoder = Model(encoder_input, latent_space, name='encoder')
 
     def add_encoder_input(self):
@@ -57,9 +63,17 @@ class VariationalAutoencoder:
 
         return x
 
-    def add_latent_space(self, x):
+    def add_bottleneck(self, x):
         self.conv_shape = K.int_shape(x)
         x = Flatten()(x)
-        x = Dense(units=self.latent_space_dim, name='encoder_output')(x)
+        self.mean = Dense(units=self.latent_space_dim, name='mean')(x)
+        self.log_variance = Dense(units=self.latent_space_dim, name='log_variance')(x)
 
+        def sample_from_normal_distribution(args):
+            mean, log_variance = args
+            eps = K.random_normal(shape=K.shape(self.mean))
+            sampled_point = mean + K.exp(log_variance / 2) * eps
+            return sampled_point
+
+        x = Lambda(sample_from_normal_distribution)([self.mean, self.log_variance])
         return x
