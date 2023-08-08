@@ -130,3 +130,6 @@ class VariationalAutoencoder:
             name=f'decoder_conv_transpose_layer_{self.num_layers}'
         )
         return conv_transpose_layer(conv_transpose_layers)
+
+    def reconstruction_loss(self, target, predicted):
+        return K.mean(K.square(target - predicted), axis=[1, 2, 3])
