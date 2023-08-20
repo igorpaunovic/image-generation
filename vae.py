@@ -1,5 +1,5 @@
 import numpy as np
-from keras import Model, metrics
+from keras import Model
 from keras.layers import Input, Conv2D, BatchNormalization, Flatten, Dense, Lambda, Reshape, Conv2DTranspose
 import keras.backend as K
 import tensorflow as tf
@@ -25,6 +25,7 @@ class VariationalAutoencoder:
 
         self.mean = None
         self.log_variance = None
+        self.reconstruction_loss_weight = 1000
 
         self.build()
 
@@ -102,7 +103,7 @@ class VariationalAutoencoder:
         x = reshape_layer
         for i in reversed(range(1, self.num_layers)):
             x = self.add_conv_transpose_layer(x, i)
-            
+
         return x
 
     def add_conv_transpose_layer(self, x, idx):
@@ -131,5 +132,13 @@ class VariationalAutoencoder:
         )
         return conv_transpose_layer(conv_transpose_layers)
 
-    def reconstruction_loss(self, target, predicted):
-        return K.mean(K.square(target - predicted), axis=[1, 2, 3])
+    def reconstruction_loss(self, y_target, y_predicted):
+        return K.mean(K.square(y_target - y_predicted), axis=[1, 2, 3])
+
+    def KL_loss(self, y_target, y_predicted):
+        return -0.5 * K.sum(1 + self.log_variance - K.square(self.mean) - K.exp(self.log_variance), axis=1)
+
+    def loss(self, y_target, y_predicted):
+        reconstruction_loss = self.reconstruction_loss(y_target, y_predicted)
+        kl_loss = self.KL_loss(y_target, y_predicted)
+        return self.reconstruction_loss_weight * reconstruction_loss + kl_loss
