@@ -154,6 +154,8 @@ class VariationalAutoencoder:
         self.model = Model(model_input, model_output, name="autoencoder")
 
     def summary(self):
+        self.encoder.summary()
+        self.decoder.summary()
         self.model.summary()
 
     def compile(self, learning_rate):
