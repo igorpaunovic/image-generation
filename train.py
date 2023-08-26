@@ -18,4 +18,7 @@ if __name__ == "__main__":
         strides=(1, 2, 2, 1)
     )
     autoencoder.compile(learning_rate=LEARNING_RATE)
-    autoencoder.train(X_train[:500], batch_size=BATCH_SIZE, num_epochs=EPOCHS)
+    autoencoder.train(X_train[:100], batch_size=BATCH_SIZE, num_epochs=EPOCHS)
+    autoencoder.save("model")
+    loaded_autoencoder = vae.VariationalAutoencoder.load("model")
+    loaded_autoencoder.summary()

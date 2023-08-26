@@ -3,6 +3,9 @@ from keras import Model
 from keras.layers import Input, Conv2D, BatchNormalization, Flatten, Dense, Lambda, Reshape, Conv2DTranspose
 import keras.backend as K
 import tensorflow as tf
+from keras.optimizers.legacy import Adam
+import os
+import pickle
 
 tf.compat.v1.disable_eager_execution()
 
@@ -26,18 +29,20 @@ class VariationalAutoencoder:
         self.mean = None
         self.log_variance = None
         self.reconstruction_loss_weight = 1000
+        self.model_input = None
 
         self.build()
 
     def build(self):
         self.build_encoder()
         self.build_decoder()
-        # self.build_autoencoder()
+        self.build_autoencoder()
 
     def build_encoder(self):
         encoder_input = self.add_encoder_input()
         layers = self.add_layers(encoder_input)
         bottleneck = self.add_bottleneck(layers)
+        self.model_input = encoder_input
         self.encoder = Model(encoder_input, bottleneck, name='encoder')
 
     def add_encoder_input(self):
@@ -142,3 +147,52 @@ class VariationalAutoencoder:
         reconstruction_loss = self.reconstruction_loss(y_target, y_predicted)
         kl_loss = self.KL_loss(y_target, y_predicted)
         return self.reconstruction_loss_weight * reconstruction_loss + kl_loss
+
+    def build_autoencoder(self):
+        model_input = self.model_input
+        model_output = self.decoder(self.encoder(model_input))
+        self.model = Model(model_input, model_output, name="autoencoder")
+
+    def summary(self):
+        self.model.summary()
+
+    def compile(self, learning_rate):
+        optimizer = Adam(learning_rate=learning_rate)
+        self.model.compile(optimizer=optimizer, loss=self.loss)
+
+    def train(self, X_train, batch_size, num_epochs):
+        self.model.fit(X_train, X_train, batch_size=batch_size, epochs=num_epochs, shuffle=True)
+
+    def save(self, save_folder="."):
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+
+        parameters = [
+            self.input_shape,
+            self.latent_space_dim,
+            self.filters,
+            self.kernels,
+            self.strides
+        ]
+
+        path = os.path.join(save_folder, "parameters.pkl")
+        with open(path, "wb") as file:
+            pickle.dump(parameters, file)
+
+        path = os.path.join(save_folder, "weights.h5")
+        self.model.save_weights(path)
+
+    @classmethod
+    def load(cls, folder="."):
+        parameters_path = os.path.join(folder, "parameters.pkl")
+        with open(parameters_path, "rb") as file:
+            parameters = pickle.load(file)
+        autoencoder = VariationalAutoencoder(*parameters)
+
+        weights_path = os.path.join(folder, "weights.h5")
+        autoencoder.model.load_weights(weights_path)
+
+        return autoencoder
+
+
+

@@ -10,3 +10,4 @@ if __name__ == '__main__':
     )
     vae.encoder.summary()
     vae.decoder.summary()
+    vae.model.summary()
