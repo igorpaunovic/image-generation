@@ -6,6 +6,7 @@ import tensorflow as tf
 from keras.optimizers.legacy import Adam
 import os
 import pickle
+import matplotlib.pyplot as plt
 
 tf.compat.v1.disable_eager_execution()
 
@@ -128,7 +129,7 @@ class VariationalAutoencoder:
 
     def add_decoder_output(self, conv_transpose_layers):
         conv_transpose_layer = Conv2DTranspose(
-            filters=1,
+            filters=3,
             kernel_size=self.kernels[0],
             strides=self.strides[0],
             padding='same',
@@ -140,13 +141,13 @@ class VariationalAutoencoder:
     def reconstruction_loss(self, y_target, y_predicted):
         return K.mean(K.square(y_target - y_predicted), axis=[1, 2, 3])
 
-    def KL_loss(self, y_target, y_predicted):
+    def KL_loss(self, target_image, predicted_image):
         return -0.5 * K.sum(1 + self.log_variance - K.square(self.mean) - K.exp(self.log_variance), axis=1)
 
-    def loss(self, y_target, y_predicted):
-        reconstruction_loss = self.reconstruction_loss(y_target, y_predicted)
-        kl_loss = self.KL_loss(y_target, y_predicted)
-        return self.reconstruction_loss_weight * reconstruction_loss + kl_loss
+    def loss(self, target_image, predicted_image):
+        reconstruction_loss = self.reconstruction_loss(target_image, predicted_image)
+        kl_loss = self.KL_loss(target_image, predicted_image)
+        return K.mean(self.reconstruction_loss_weight * reconstruction_loss + kl_loss)
 
     def build_autoencoder(self):
         model_input = self.model_input
@@ -195,6 +196,18 @@ class VariationalAutoencoder:
         autoencoder.model.load_weights(weights_path)
 
         return autoencoder
+
+    def plot_generated_images(self, rows, columns):
+        latent_samples = np.random.randn(rows*columns, self.latent_space_dim)
+        generated_images = self.decoder.predict(latent_samples)
+        fig, axs = plt.subplots(rows, columns, figsize=(8, 8))
+        for i in range(rows):
+            for j in range(columns):
+                index = i * columns + j
+                ax = axs[i, j]
+                ax.imshow(generated_images[index].reshape((32, 32, 3)))
+                ax.axis('off')
+        plt.show()
 
 
 

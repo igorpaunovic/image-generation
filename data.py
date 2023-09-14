@@ -2,11 +2,11 @@ import numpy as np
 import os
 from PIL import Image
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 def preprocess_data(path):
     images = []
-    for file_name in os.listdir(path):
+    for file_name in tqdm(os.listdir(path)):
         file_path = os.path.join(path, file_name)
         if os.path.isdir(file_path):
             preprocess_data(file_path)
@@ -27,16 +27,15 @@ def preprocess_data(path):
     np.save(os.path.join(save_folder, "images.npy"), images)
 
 
-def load_data(path="data"):
-    training_images = np.load(os.path.join(path, "training", "images.npy"))
-    test_images = np.load(os.path.join(path, "testing", "images.npy"))
-    images = np.concatenate((training_images, test_images))
+def load_data(path="data/calebA"):
+    images = np.load(os.path.join(path, "images.npy"))
     return images
 
 
 if __name__ == "__main__":
-    # preprocess_data("./animal_images")
+    # preprocess_data("calebA")
     images = load_data()
+    print(images.shape)
 
     plt.imshow(images[350])
     plt.show()
