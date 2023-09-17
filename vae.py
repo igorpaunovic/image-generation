@@ -7,6 +7,10 @@ from keras.optimizers.legacy import Adam
 import os
 import pickle
 import matplotlib.pyplot as plt
+import tensorflow as tf
+import random
+import keras
+from data import load_data
 
 tf.compat.v1.disable_eager_execution()
 
@@ -29,7 +33,7 @@ class VariationalAutoencoder:
 
         self.mean = None
         self.log_variance = None
-        self.reconstruction_loss_weight = 1000
+        self.reconstruction_loss_weight = 1000.0
         self.model_input = None
 
         self.build()
@@ -138,8 +142,10 @@ class VariationalAutoencoder:
         )
         return conv_transpose_layer(conv_transpose_layers)
 
-    def reconstruction_loss(self, y_target, y_predicted):
-        return K.mean(K.square(y_target - y_predicted), axis=[1, 2, 3])
+    def reconstruction_loss(self, y_true, y_pred):
+        mse_loss = tf.reduce_mean(tf.square(y_true - y_pred))
+
+        return mse_loss
 
     def KL_loss(self, target_image, predicted_image):
         return -0.5 * K.sum(1 + self.log_variance - K.square(self.mean) - K.exp(self.log_variance), axis=1)
@@ -147,7 +153,7 @@ class VariationalAutoencoder:
     def loss(self, target_image, predicted_image):
         reconstruction_loss = self.reconstruction_loss(target_image, predicted_image)
         kl_loss = self.KL_loss(target_image, predicted_image)
-        return K.mean(self.reconstruction_loss_weight * reconstruction_loss + kl_loss)
+        return K.mean(reconstruction_loss * self.reconstruction_loss_weight + kl_loss)
 
     def build_autoencoder(self):
         model_input = self.model_input
@@ -197,17 +203,45 @@ class VariationalAutoencoder:
 
         return autoencoder
 
-    def plot_generated_images(self, rows, columns):
-        latent_samples = np.random.randn(rows*columns, self.latent_space_dim)
+    def plot_generated_images(self, rows, columns, latent_samples=None):
+        print("PLOT GENERATED IMAGES")
+        if latent_samples is None:
+            latent_samples = np.random.randn(rows*columns, self.latent_space_dim)
         generated_images = self.decoder.predict(latent_samples)
+        fig, axs = plt.subplots(rows, columns, figsize=(8, 8))
+        for i in range(rows):
+            print(i)
+            for j in range(columns):
+                index = i * columns + j
+                ax = axs[i, j]
+                ax.imshow(generated_images[index].reshape((128, 128, 3)))
+                ax.axis('off')
+        plt.show()
+
+    def plot_sample_images(self, rows, columns):
+        # (X_train, y_train), (X_test, y_test) = keras.datasets.cifar10.load_data()
+        #
+        # images = np.concatenate((X_train, X_test), axis=0)
+        # labels = np.concatenate((y_train, y_test), axis=0)
+        #
+        # images = np.array([x for i, x in enumerate(images) if labels[i] == 7])
+        # selected_indices = random.sample(range(len(images)), rows*columns)
+        # selected_images = images[selected_indices]
+        # selected_images = selected_images.astype("float32") / 255
+        images = load_data()
+        selected_indices = random.sample(range(len(images)), rows*columns)
+        selected_images = images[selected_indices]
         fig, axs = plt.subplots(rows, columns, figsize=(8, 8))
         for i in range(rows):
             for j in range(columns):
                 index = i * columns + j
                 ax = axs[i, j]
-                ax.imshow(generated_images[index].reshape((32, 32, 3)))
+                ax.imshow(selected_images[index].reshape((128, 128, 3)))
                 ax.axis('off')
         plt.show()
+
+        samples = self.encoder.predict(selected_images)
+        return samples
 
 
 

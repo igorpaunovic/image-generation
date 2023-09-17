@@ -23,4 +23,6 @@ if __name__ == "__main__":
     # print(encoded)
     # encoded = np.random.normal(size=(1, vae.latent_space_dim))
     # encoded = np.array([[1,1,-1.5,1,2]])
-    vae.plot_generated_images(5, 6)
+
+    samples = vae.plot_sample_images(4, 4)
+    vae.plot_generated_images(4, 4, latent_samples=samples)
