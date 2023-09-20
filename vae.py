@@ -2,7 +2,6 @@ import numpy as np
 from keras import Model
 from keras.layers import Input, Conv2D, BatchNormalization, Flatten, Dense, Lambda, Reshape, Conv2DTranspose
 import keras.backend as K
-import tensorflow as tf
 from keras.optimizers.legacy import Adam
 import os
 import pickle
@@ -46,7 +45,8 @@ class VariationalAutoencoder:
     def build_encoder(self):
         encoder_input = self.add_encoder_input()
         layers = self.add_layers(encoder_input)
-        bottleneck = self.add_bottleneck(layers)
+        hidden_layer = self.add_hidden_layer(layers)
+        bottleneck = self.add_bottleneck(hidden_layer)
         self.model_input = encoder_input
         self.encoder = Model(encoder_input, bottleneck, name='encoder')
 
@@ -71,9 +71,12 @@ class VariationalAutoencoder:
             name=f'encoder_conv_layer_{layer_num}'
         )
         x = conv_layer(x)
-        x = BatchNormalization(name=f'encoder_batch_normalization_{layer_num}')(x)
+        # x = BatchNormalization(name=f'encoder_batch_normalization_{layer_num}')(x)
 
         return x
+
+    def add_hidden_layer(self, x):
+        return Dense(units=128, activation='relu')(x)
 
     def add_bottleneck(self, x):
         self.conv_shape = K.int_shape(x)[1:]
@@ -92,7 +95,8 @@ class VariationalAutoencoder:
 
     def build_decoder(self):
         decoder_input = self.add_decoder_input()
-        dense_layer = self.add_decoder_dense_layer(decoder_input)
+        hidden_layer = self.add_hidden_layer(decoder_input)
+        dense_layer = self.add_decoder_dense_layer(hidden_layer)
         reshape_layer = self.add_reshape_layer(dense_layer)
         conv_transpose_layers = self.add_conv_transpose_layers(reshape_layer)
         decoder_output = self.add_decoder_output(conv_transpose_layers)
@@ -127,7 +131,7 @@ class VariationalAutoencoder:
             name=f'decoder_conv_transpose_layer_{layer_num}'
         )
         x = conv_transpose_layer(x)
-        x = BatchNormalization(name=f'decoder_batch_normalization_{layer_num}')(x)
+        # x = BatchNormalization(name=f'decoder_batch_normalization_{layer_num}')(x)
 
         return x
 
@@ -210,33 +214,32 @@ class VariationalAutoencoder:
         generated_images = self.decoder.predict(latent_samples)
         fig, axs = plt.subplots(rows, columns, figsize=(8, 8))
         for i in range(rows):
-            print(i)
             for j in range(columns):
                 index = i * columns + j
                 ax = axs[i, j]
-                ax.imshow(generated_images[index].reshape((128, 128, 3)))
+                ax.imshow(generated_images[index].reshape((32, 32, 3)))
                 ax.axis('off')
         plt.show()
 
     def plot_sample_images(self, rows, columns):
-        # (X_train, y_train), (X_test, y_test) = keras.datasets.cifar10.load_data()
-        #
-        # images = np.concatenate((X_train, X_test), axis=0)
-        # labels = np.concatenate((y_train, y_test), axis=0)
-        #
-        # images = np.array([x for i, x in enumerate(images) if labels[i] == 7])
-        # selected_indices = random.sample(range(len(images)), rows*columns)
-        # selected_images = images[selected_indices]
-        # selected_images = selected_images.astype("float32") / 255
-        images = load_data()
+        (X_train, y_train), (X_test, y_test) = keras.datasets.cifar10.load_data()
+
+        images = np.concatenate((X_train, X_test), axis=0)
+        labels = np.concatenate((y_train, y_test), axis=0)
+
+        images = np.array([x for i, x in enumerate(images) if labels[i] == 7])
         selected_indices = random.sample(range(len(images)), rows*columns)
         selected_images = images[selected_indices]
+        selected_images = selected_images.astype("float32") / 255
+        # images = load_data()
+        # selected_indices = random.sample(range(len(images)), rows*columns)
+        # selected_images = images[selected_indices]
         fig, axs = plt.subplots(rows, columns, figsize=(8, 8))
         for i in range(rows):
             for j in range(columns):
                 index = i * columns + j
                 ax = axs[i, j]
-                ax.imshow(selected_images[index].reshape((128, 128, 3)))
+                ax.imshow(selected_images[index].reshape((32, 32, 3)))
                 ax.axis('off')
         plt.show()
 
