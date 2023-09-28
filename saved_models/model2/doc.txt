@@ -1,0 +1,98 @@
+epochs: 10
+batch_size: 64
+latent_space_dim: 100
+learning_rate: 0.0005
+Model: "encoder"
+__________________________________________________________________________________________________
+ Layer (type)                Output Shape                 Param #   Connected to                  
+==================================================================================================
+ encoder_input (InputLayer)  [(None, 64, 64, 3)]          0         []                            
+                                                                                                  
+ conv2d_35 (Conv2D)          (None, 32, 32, 32)           1568      ['encoder_input[0][0]']       
+                                                                                                  
+ batch_normalization_50 (Ba  (None, 32, 32, 32)           128       ['conv2d_35[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ leaky_re_lu_49 (LeakyReLU)  (None, 32, 32, 32)           0         ['batch_normalization_50[0][0]
+                                                                    ']                            
+                                                                                                  
+ conv2d_36 (Conv2D)          (None, 16, 16, 64)           32832     ['leaky_re_lu_49[0][0]']      
+                                                                                                  
+ batch_normalization_51 (Ba  (None, 16, 16, 64)           256       ['conv2d_36[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ leaky_re_lu_50 (LeakyReLU)  (None, 16, 16, 64)           0         ['batch_normalization_51[0][0]
+                                                                    ']                            
+                                                                                                  
+ conv2d_37 (Conv2D)          (None, 8, 8, 128)            131200    ['leaky_re_lu_50[0][0]']      
+                                                                                                  
+ batch_normalization_52 (Ba  (None, 8, 8, 128)            512       ['conv2d_37[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ leaky_re_lu_51 (LeakyReLU)  (None, 8, 8, 128)            0         ['batch_normalization_52[0][0]
+                                                                    ']                            
+                                                                                                  
+ conv2d_38 (Conv2D)          (None, 4, 4, 256)            524544    ['leaky_re_lu_51[0][0]']      
+                                                                                                  
+ batch_normalization_53 (Ba  (None, 4, 4, 256)            1024      ['conv2d_38[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ leaky_re_lu_52 (LeakyReLU)  (None, 4, 4, 256)            0         ['batch_normalization_53[0][0]
+                                                                    ']                            
+                                                                                                  
+ flatten_9 (Flatten)         (None, 4096)                 0         ['leaky_re_lu_52[0][0]']      
+                                                                                                  
+ mean (Dense)                (None, 100)                  409700    ['flatten_9[0][0]']           
+                                                                                                  
+ log_variance (Dense)        (None, 100)                  409700    ['flatten_9[0][0]']           
+                                                                                                  
+ encoder_reparametrization   (None, 100)                  0         ['mean[0][0]',                
+ (ReparameterizationLayer)                                           'log_variance[0][0]']        
+                                                                                                  
+==================================================================================================
+Total params: 1511464 (5.77 MB)
+Trainable params: 1510504 (5.76 MB)
+Non-trainable params: 960 (3.75 KB)
+__________________________________________________________________________________________________
+Model: "decoder"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ decoder_input (InputLayer)  [(None, 100)]             0         
+                                                                 
+ decoder_dense (Dense)       (None, 4096)              413696    
+                                                                 
+ reshape_9 (Reshape)         (None, 4, 4, 256)         0         
+                                                                 
+ conv2d_transpose_34 (Conv2  (None, 8, 8, 128)         295040    
+ DTranspose)                                                     
+                                                                 
+ batch_normalization_54 (Ba  (None, 8, 8, 128)         512       
+ tchNormalization)                                               
+                                                                 
+ leaky_re_lu_53 (LeakyReLU)  (None, 8, 8, 128)         0         
+                                                                 
+ conv2d_transpose_35 (Conv2  (None, 16, 16, 64)        73792     
+ DTranspose)                                                     
+                                                                 
+ batch_normalization_55 (Ba  (None, 16, 16, 64)        256       
+ tchNormalization)                                               
+                                                                 
+ leaky_re_lu_54 (LeakyReLU)  (None, 16, 16, 64)        0         
+                                                                 
+ conv2d_transpose_36 (Conv2  (None, 32, 32, 32)        18464     
+ DTranspose)                                                     
+                                                                 
+ batch_normalization_56 (Ba  (None, 32, 32, 32)        128       
+ tchNormalization)                                               
+                                                                 
+ leaky_re_lu_55 (LeakyReLU)  (None, 32, 32, 32)        0         
+                                                                 
+ conv2d_transpose_37 (Conv2  (None, 64, 64, 3)         867       
+ DTranspose)                                                     
+                                                                 
+=================================================================
+Total params: 802755 (3.06 MB)
+Trainable params: 802307 (3.06 MB)
+Non-trainable params: 448 (1.75 KB)
+_________________________________________________________________
